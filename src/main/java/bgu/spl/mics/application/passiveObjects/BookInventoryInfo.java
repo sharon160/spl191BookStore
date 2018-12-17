@@ -1,21 +1,28 @@
 package bgu.spl.mics.application.passiveObjects;
 
+import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
+
+import java.io.Serializable;
+import java.util.concurrent.atomic.AtomicInteger;
+
 /**
  * Passive data-object representing a information about a certain book in the inventory.
  * You must not alter any of the given public methods of this class. 
  * <p>
  * You may add fields and methods to this class as you see fit (including public methods).
  */
-public class BookInventoryInfo {
-
+public class BookInventoryInfo implements Serializable{
+	@SerializedName("bookTitle")
+	@Expose
 	private String name;
-	private int amount;
+	private AtomicInteger amount;
 	private int price;
 
 
 	public BookInventoryInfo(String name,int amount, int price){
 		this.name=name;
-		this.amount=amount;
+		this.amount = new AtomicInteger(amount);
 		this.price=price;
 	}
 
@@ -35,7 +42,7 @@ public class BookInventoryInfo {
      * @return amount of available books.      
      */
 	public int getAmountInInventory() {
-		return amount;
+		return amount.get();
 	}
 
 	/**
@@ -47,7 +54,7 @@ public class BookInventoryInfo {
 		return price;
 	}
 
-	public void setAmount(int amount) {
-		this.amount=amount;
+	public void decreaseAmount() {
+		amount.decrementAndGet();
 	}
 }

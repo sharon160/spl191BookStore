@@ -1,7 +1,13 @@
 package bgu.spl.mics.application.passiveObjects;
 
+import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
+
+import java.io.Serializable;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Vector;
 
 /**
  * Passive data-object representing a customer of the store.
@@ -9,7 +15,9 @@ import java.util.List;
  * <p>
  * You may add fields and methods to this class as you see fit (including public methods).
  */
-public class Customer {
+public class Customer implements Serializable{
+	@SerializedName("orderSchedule")
+	@Expose
 	private List<OrderSchedule> ordersList;
 	private String name;
 	private int id;
@@ -25,7 +33,7 @@ public class Customer {
 		this.address=address;
 		this.distance=distance;
 		this.creditCard=creditCard;
-		orderReceipts = new LinkedList<>();
+		orderReceipts = Collections.synchronizedList(new LinkedList<>());
 	}
 
 	/**
@@ -88,5 +96,12 @@ public class Customer {
 
 	public void chargeCreditCard(int amount) {
 		creditCard.setAmount(creditCard.getAmount() - amount);
+	}
+
+	public void addReceipt(OrderReceipt orderReceipt) {
+		if(orderReceipts == null)
+			orderReceipts = Collections.synchronizedList(new LinkedList<>());
+		if(orderReceipt != null)
+			orderReceipts.add(orderReceipt);
 	}
 }

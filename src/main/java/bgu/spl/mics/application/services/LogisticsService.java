@@ -4,8 +4,11 @@ import bgu.spl.mics.Future;
 import bgu.spl.mics.MicroService;
 import bgu.spl.mics.application.messages.DeliveryEvent;
 import bgu.spl.mics.application.messages.ReleaseVehicleEvent;
+import bgu.spl.mics.application.messages.TerminateBroadcast;
 import bgu.spl.mics.application.messages.VehicleRequestEvent;
 import bgu.spl.mics.application.passiveObjects.DeliveryVehicle;
+
+import java.util.concurrent.CountDownLatch;
 
 /**
  * Logistic service in charge of delivering books that have been purchased to customers.
@@ -17,22 +20,30 @@ import bgu.spl.mics.application.passiveObjects.DeliveryVehicle;
  * You MAY change constructor signatures and even add new public constructors.
  */
 public class LogisticsService extends MicroService {
-
-	public LogisticsService() {
-		super("LogisticService");
-		// TODO Implement this
+	private CountDownLatch countDownLatch;
+	public LogisticsService(String name, CountDownLatch countDownLatch) {
+		super(name);
+		this.countDownLatch = countDownLatch;
 	}
 
 	@Override @SuppressWarnings("unchecked")
 	protected void initialize() {
+		subscribeBroadcast(TerminateBroadcast.class, (TerminateBroadcast t) -> terminate());
 		subscribeEvent(DeliveryEvent.class, (DeliveryEvent d) -> {
 			Future<Future<DeliveryVehicle>> future = sendEvent(new VehicleRequestEvent());
-			Future<DeliveryVehicle> futureVehicle = future.get();
-			DeliveryVehicle vehicle = futureVehicle.get();
-			vehicle.deliver(d.getAddress(), d.getDistance());
-			sendEvent(new ReleaseVehicleEvent(vehicle));
-			complete(d, true);
+			if(future != null) {
+				Future<DeliveryVehicle> futureVehicle=future.get();
+				if(futureVehicle != null) {
+					DeliveryVehicle vehicle=futureVehicle.get();
+					if(vehicle != null) {
+						vehicle.deliver(d.getAddress(), d.getDistance());
+						sendEvent(new ReleaseVehicleEvent(futureVehicle));
+					}
+				}
+			}
+			complete(d, null);
 		});
+		countDownLatch.countDown();
 		
 	}
 

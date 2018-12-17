@@ -38,8 +38,7 @@ public class MessageBusImpl implements MessageBus {
 	public <T> void subscribeEvent(Class<? extends Event<T>> type, MicroService m) {
 		hMapSubscribeEvent.putIfAbsent(type, new ConcurrentLinkedQueue<>());
 
-		if(!hMapSubscribeEvent.get(type).contains(m))
-			hMapSubscribeEvent.get(type).add(m);
+		hMapSubscribeEvent.get(type).add(m);
 
 		if(!hMapSubscribe.get(m).contains(type))
 			hMapSubscribe.get(m).add(type);
@@ -49,8 +48,7 @@ public class MessageBusImpl implements MessageBus {
 	public void subscribeBroadcast(Class<? extends Broadcast> type, MicroService m) {
 		hMapSubscribeBroadcast.putIfAbsent(type, new ConcurrentLinkedQueue<>());
 
-		if(!hMapSubscribeBroadcast.get(type).contains(m))
-			hMapSubscribeBroadcast.get(type).add(m);
+		hMapSubscribeBroadcast.get(type).add(m);
 
 		if(!hMapSubscribe.get(m).contains(type))
 			hMapSubscribe.get(m).add(type);
@@ -58,8 +56,11 @@ public class MessageBusImpl implements MessageBus {
 
 	@Override @SuppressWarnings("unchecked")
 	public <T> void complete(Event<T> e, T result) {
-		hMapEventFuture.get(e).resolve(result);
-		hMapEventFuture.remove(e);
+		Future future = hMapEventFuture.get(e);
+		if(future != null) {
+			future.resolve(result);
+			hMapEventFuture.remove(e);
+		}
 
 	}
 
@@ -87,12 +88,13 @@ public class MessageBusImpl implements MessageBus {
 					queue.add(m);
 			}
 			if (m != null) {
-				Queue<Message> messages = hMapAssign.get(m);
 				synchronized (m) {
-					f=new Future<>();
-					hMapEventFuture.put(e, f);
-					hMapSubscribeEvent.get(e.getClass()).add(m);
-					messages.add(e);
+					Queue<Message> messages = hMapAssign.get(m);
+					if(messages != null) {
+						f=new Future<>();
+						hMapEventFuture.put(e, f);
+						messages.add(e);
+					}
 				}
 			}
 		}
@@ -112,13 +114,10 @@ public class MessageBusImpl implements MessageBus {
 				messageQueue=hMapAssign.remove(m);
 			}
 			for(Class<? extends Message> message : hMapSubscribe.get(m)) {
-				if(message.isInstance(Event.class))
+				if(Event.class.isAssignableFrom(message))
 					hMapSubscribeEvent.get(message).remove(m);
-				else if(message.isInstance(Broadcast.class))
+				else if(Broadcast.class.isAssignableFrom(message))
 					hMapSubscribeBroadcast.get(message).remove(m);
-//			boolean removed =
-//			while(!removed)
-//				removed = hMapSubscribeEvent.get(message).remove(m);
 
 			}
 			hMapSubscribe.remove(m);

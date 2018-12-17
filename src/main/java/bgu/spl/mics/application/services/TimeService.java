@@ -28,7 +28,7 @@ public class TimeService extends MicroService{
 
 	@Override
 	protected void initialize() {
-		while(currentTick < duration) {
+		while(currentTick < duration - 1) {
 			currentTick = currentTick + 1;
 			sendBroadcast(new TickBroadcast(currentTick));
 			try {

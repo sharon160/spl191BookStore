@@ -3,9 +3,12 @@ package bgu.spl.mics.application.services;
 import bgu.spl.mics.MessageBusImpl;
 import bgu.spl.mics.MicroService;
 import bgu.spl.mics.application.messages.CheckInventoryEvent;
+import bgu.spl.mics.application.messages.TerminateBroadcast;
 import bgu.spl.mics.application.passiveObjects.BookInventoryInfo;
 import bgu.spl.mics.application.passiveObjects.Inventory;
 import bgu.spl.mics.application.passiveObjects.OrderResult;
+
+import java.util.concurrent.CountDownLatch;
 
 /**
  * InventoryService is in charge of the book inventory and stock.
@@ -18,14 +21,17 @@ import bgu.spl.mics.application.passiveObjects.OrderResult;
  */
 
 public class InventoryService extends MicroService{
+	private CountDownLatch countDownLatch;
 	private Inventory inventory;
-	public InventoryService(Inventory inventory) {
-		super("Change_This_Name");
-		this.inventory = inventory;
+	public InventoryService(String name, CountDownLatch countDownLatch) {
+		super(name);
+		inventory = Inventory.getInstance();
+		this.countDownLatch = countDownLatch;
 	}
 
 	@Override
 	protected void initialize() {
+		subscribeBroadcast(TerminateBroadcast.class, (TerminateBroadcast t) -> terminate());
 		subscribeEvent(CheckInventoryEvent.class, (CheckInventoryEvent c) -> {
 			BookInventoryInfo book = null;
 			int price = inventory.checkAvailabiltyAndGetPrice(c.getBookTitle());
@@ -37,7 +43,7 @@ public class InventoryService extends MicroService{
 			}
 			MessageBusImpl.getInstance().complete(c, book);
 		});
-		
+		countDownLatch.countDown();
 	}
 
 }

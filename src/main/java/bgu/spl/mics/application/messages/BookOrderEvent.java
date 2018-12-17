@@ -9,7 +9,7 @@ public class BookOrderEvent implements Event<OrderReceipt> {
     private int tick;
     private String bookTitle;
 
-    public BookOrderEvent(Customer customer,int Tick, String bookTitle) {
+    public BookOrderEvent(Customer customer,int tick, String bookTitle) {
         this.customer= customer;
         this.bookTitle = bookTitle;
         this.tick = tick;
